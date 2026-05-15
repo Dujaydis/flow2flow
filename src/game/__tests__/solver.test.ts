@@ -14,6 +14,7 @@ describe('solver', () => {
   it('returns no solution for impossible setup (no covering path)', () => {
     const impossible: Level = {
       id: 'imp', width: 2, height: 2,
+      pack: 'Test', numberInPack: 1, displayName: 'imp',
       pairs: [
         { color: 'red',  a: [0, 0], b: [1, 1] },
         { color: 'blue', a: [0, 1], b: [1, 0] },
@@ -25,6 +26,7 @@ describe('solver', () => {
   it('solves a tiny 2x2 single pair', () => {
     const tiny: Level = {
       id: 'tiny', width: 2, height: 2,
+      pack: 'Test', numberInPack: 1, displayName: 'tiny',
       pairs: [{ color: 'red', a: [0, 0], b: [1, 0] }],
     };
     const sols = solve(tiny, { maxSolutions: 3, timeoutMs: 1000 });

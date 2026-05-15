@@ -19,10 +19,17 @@ function CellImpl({ row, col, view, onPointerDown }: Props) {
   const pathColor = view?.pathColor ? colorHex(view.pathColor) : null;
   const endpointColor = view?.endpointColor ? colorHex(view.endpointColor) : null;
 
+  const className = [
+    'cell',
+    view?.isTail && view.isActive ? 'tail' : '',
+    view?.endpointConnected ? 'endpoint-connected' : '',
+    view?.justConnected ? 'endpoint-flash' : '',
+  ].filter(Boolean).join(' ');
+
   return (
     <div
       data-cell={`${row},${col}`}
-      className={`cell${view?.isTail ? ' tail' : ''}`}
+      className={className}
       onPointerDown={handlePointerDown}
     >
       {pathColor && (
@@ -37,7 +44,13 @@ function CellImpl({ row, col, view, onPointerDown }: Props) {
         </>
       )}
       {endpointColor && (
-        <div className="endpoint" style={{ background: endpointColor }} />
+        <div
+          className="endpoint"
+          style={{
+            background: endpointColor,
+            ['--ep-color' as string]: endpointColor,
+          } as React.CSSProperties}
+        />
       )}
     </div>
   );
@@ -52,7 +65,9 @@ const viewEqual = (a: CellView | undefined, b: CellView | undefined): boolean =>
     a.prevDir === b.prevDir &&
     a.nextDir === b.nextDir &&
     a.isTail === b.isTail &&
-    a.isActive === b.isActive
+    a.isActive === b.isActive &&
+    a.endpointConnected === b.endpointConnected &&
+    a.justConnected === b.justConnected
   );
 };
 

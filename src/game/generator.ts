@@ -51,8 +51,13 @@ export const generate = (opts: GenerateOpts): Level | null => {
     }
     if (!valid) continue;
 
+    const stamp = Date.now().toString(36);
+    const id = `${idPrefix}-${width}x${height}-${pairCount}p-${stamp}-${attempt}`;
     const level: Level = {
-      id: `${idPrefix}-${width}x${height}-${pairCount}p-${Date.now().toString(36)}-${attempt}`,
+      id,
+      pack: 'Generated',
+      numberInPack: 0,
+      displayName: `Generated ${width}×${height} · ${pairCount}p`,
       width, height, pairs,
     };
 

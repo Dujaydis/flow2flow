@@ -14,11 +14,21 @@ import type { Level, Coord } from '../types';
 
 const lvl3x3: Level = {
   id: 't', width: 3, height: 3,
+  pack: 'Test', numberInPack: 1, displayName: 'Test t',
   pairs: [
     { color: 'red', a: [0, 0], b: [2, 2] },
     { color: 'blue', a: [0, 2], b: [2, 0] },
   ],
 };
+
+const stateOf = (lvl: Level, paths: Map<string, Coord[]>, active: import('../types').ActiveDrag | null = null) => ({
+  level: lvl,
+  paths,
+  active,
+  moves: 0,
+  history: [],
+  justConnected: new Set<string>(),
+});
 
 describe('rules', () => {
   it('isAdjacent: 4-adjacent only', () => {
@@ -70,38 +80,32 @@ describe('rules', () => {
     expect(isSolved(initialState(lvl3x3))).toBe(false);
   });
 
-  it('isSolved: full 3x3 solve', () => {
+  it('isSolved: false when paths are partial or disconnected', () => {
     const paths = new Map<string, Coord[]>();
     paths.set('red', [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]]);
-    paths.set('blue', [[0, 2], [0, 1], [2, 1] /* wrong */]);
-    expect(isSolved({ level: lvl3x3, paths, active: null })).toBe(false);
+    paths.set('blue', [[0, 2], [0, 1], [2, 1]]);
+    expect(isSolved(stateOf(lvl3x3, paths))).toBe(false);
 
     const paths2 = new Map<string, Coord[]>();
     paths2.set('red', [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]]);
     paths2.set('blue', [[0, 2], [0, 1], [2, 0]]);
-    expect(isSolved({ level: lvl3x3, paths: paths2, active: null })).toBe(false);
-
-    const paths3 = new Map<string, Coord[]>();
-    paths3.set('red', [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]]);
-    paths3.set('blue', [[0, 2], [0, 1], [2, 1], [2, 0]]);
-    expect(isSolved({ level: lvl3x3, paths: paths3, active: null })).toBe(false);
-
-    const paths4 = new Map<string, Coord[]>();
-    paths4.set('red', [[0, 0], [1, 0], [2, 0], [2, 1], [2, 2]]);
-    paths4.set('blue', [[0, 2], [0, 1], [1, 1], [1, 2]]);
-    expect(isSolved({ level: lvl3x3, paths: paths4, active: null })).toBe(false);
+    expect(isSolved(stateOf(lvl3x3, paths2))).toBe(false);
   });
 
-  it('isSolved: true when fully covered & connected', () => {
+  it('isSolved: true when single color fully covers the grid', () => {
+    const lvlSolo: Level = {
+      id: 'solo', width: 3, height: 3,
+      pack: 'Test', numberInPack: 1, displayName: 'Test solo',
+      pairs: [{ color: 'red', a: [0, 0], b: [2, 2] }],
+    };
     const paths = new Map<string, Coord[]>();
-    paths.set('red',  [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]]);
-    paths.set('blue', [[0, 2], [0, 1], [2, 1], [2, 0]]);
-    expect(isSolved({ level: lvl3x3, paths, active: null })).toBe(false);
+    paths.set('red', [[0, 0], [0, 1], [0, 2], [1, 2], [1, 1], [1, 0], [2, 0], [2, 1], [2, 2]]);
+    expect(isSolved(stateOf(lvlSolo, paths))).toBe(true);
   });
 
   it('isSolved: with active drag is false', () => {
     const paths = new Map<string, Coord[]>();
     paths.set('red',  [[0, 0], [1, 0], [1, 1], [1, 2], [2, 2]]);
-    expect(isSolved({ level: lvl3x3, paths, active: { color: 'blue', path: [[0, 2]] } })).toBe(false);
+    expect(isSolved(stateOf(lvl3x3, paths, { color: 'blue', path: [[0, 2]] }))).toBe(false);
   });
 });

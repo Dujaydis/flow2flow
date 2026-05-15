@@ -1,5 +1,5 @@
-import type { Coord, GameState } from './types';
-import { cellKey } from './rules';
+import type { Coord, GameState, PathsMap, Level } from './types';
+import { cellKey, coordsEqual, pairFor } from './rules';
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
@@ -18,6 +18,8 @@ export interface CellView {
   nextDir: Direction | null;
   isTail: boolean;
   isActive: boolean;
+  endpointConnected: boolean;
+  justConnected: boolean;
 }
 
 const fresh = (): CellView => ({
@@ -27,7 +29,23 @@ const fresh = (): CellView => ({
   nextDir: null,
   isTail: false,
   isActive: false,
+  endpointConnected: false,
+  justConnected: false,
 });
+
+const isPairConnected = (level: Level, color: string, paths: PathsMap): boolean => {
+  const path = paths.get(color);
+  if (!path || path.length < 2) return false;
+  const first = path[0];
+  const last = path[path.length - 1];
+  if (!first || !last) return false;
+  const pair = pairFor(level, color);
+  if (!pair) return false;
+  return (
+    (coordsEqual(first, pair.a) && coordsEqual(last, pair.b)) ||
+    (coordsEqual(first, pair.b) && coordsEqual(last, pair.a))
+  );
+};
 
 export const computeCellViews = (state: GameState): Map<string, CellView> => {
   const views = new Map<string, CellView>();
@@ -36,9 +54,23 @@ export const computeCellViews = (state: GameState): Map<string, CellView> => {
     if (!v) { v = fresh(); views.set(key, v); }
     return v;
   };
+  const connectedColors = new Set<string>();
   for (const pair of state.level.pairs) {
-    get(cellKey(pair.a)).endpointColor = pair.color;
-    get(cellKey(pair.b)).endpointColor = pair.color;
+    if (isPairConnected(state.level, pair.color, state.paths)) {
+      connectedColors.add(pair.color);
+    }
+  }
+  for (const pair of state.level.pairs) {
+    const connected = connectedColors.has(pair.color);
+    const flash = state.justConnected.has(pair.color);
+    const a = get(cellKey(pair.a));
+    a.endpointColor = pair.color;
+    a.endpointConnected = connected;
+    a.justConnected = flash;
+    const b = get(cellKey(pair.b));
+    b.endpointColor = pair.color;
+    b.endpointConnected = connected;
+    b.justConnected = flash;
   }
   for (const [color, path] of state.paths) {
     path.forEach((cell, i) => {

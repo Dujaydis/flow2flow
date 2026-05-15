@@ -1,22 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import { reducer, initialState } from '../reducer';
-import type { Level } from '../types';
+import type { Level, Pair } from '../types';
 
-const lvl3x3: Level = {
-  id: 't', width: 3, height: 3,
-  pairs: [
-    { color: 'red',  a: [0, 0], b: [2, 2] },
-    { color: 'blue', a: [0, 2], b: [2, 0] },
-  ],
-};
+const makeLevel = (id: string, width: number, height: number, pairs: Pair[]): Level => ({
+  id, width, height, pairs,
+  pack: 'Test', numberInPack: 1, displayName: `Test ${id}`,
+});
 
-const lvl4x4: Level = {
-  id: 't4', width: 4, height: 4,
-  pairs: [
-    { color: 'red',  a: [0, 0], b: [3, 3] },
-    { color: 'blue', a: [0, 3], b: [3, 0] },
-  ],
-};
+const lvl3x3: Level = makeLevel('t', 3, 3, [
+  { color: 'red',  a: [0, 0], b: [2, 2] },
+  { color: 'blue', a: [0, 2], b: [2, 0] },
+]);
+
+const lvl4x4: Level = makeLevel('t4', 4, 4, [
+  { color: 'red',  a: [0, 0], b: [3, 3] },
+  { color: 'blue', a: [0, 3], b: [3, 0] },
+]);
 
 describe('reducer', () => {
   it('LOAD_LEVEL initializes state', () => {

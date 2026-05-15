@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { Dispatch, PointerEvent as ReactPointerEvent } from 'react';
 import type { Action, Coord, GameState } from '../game/types';
 import { computeCellViews } from '../game/views';
@@ -21,12 +21,19 @@ const parseCellAttr = (attr: string): Coord | null => {
 export function Board({ state, dispatch }: Props) {
   const views = useMemo(() => computeCellViews(state), [state]);
   const { width, height } = state.level;
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const activePointerId = useRef<number | null>(null);
 
   const handlePointerDown = useCallback(
     (cell: Coord, e: ReactPointerEvent) => {
       e.preventDefault();
-      const target = e.currentTarget as Element & { releasePointerCapture?: (id: number) => void };
-      try { target.releasePointerCapture?.(e.pointerId); } catch { /* */ }
+      const board = boardRef.current;
+      if (board && typeof board.setPointerCapture === 'function') {
+        try {
+          board.setPointerCapture(e.pointerId);
+          activePointerId.current = e.pointerId;
+        } catch { /* */ }
+      }
       dispatch({ type: 'START_DRAG', cell });
     },
     [dispatch]
@@ -48,9 +55,17 @@ export function Board({ state, dispatch }: Props) {
     [state.active, dispatch]
   );
 
-  const handlePointerUp = useCallback(() => {
-    if (state.active) dispatch({ type: 'END_DRAG' });
-  }, [state.active, dispatch]);
+  const handlePointerUp = useCallback(
+    (e: ReactPointerEvent) => {
+      const board = boardRef.current;
+      if (board && activePointerId.current === e.pointerId) {
+        try { board.releasePointerCapture(e.pointerId); } catch { /* */ }
+        activePointerId.current = null;
+      }
+      if (state.active) dispatch({ type: 'END_DRAG' });
+    },
+    [state.active, dispatch]
+  );
 
   const cells = [];
   for (let r = 0; r < height; r++) {
@@ -69,6 +84,7 @@ export function Board({ state, dispatch }: Props) {
 
   return (
     <div
+      ref={boardRef}
       className="board"
       style={{
         gridTemplateColumns: `repeat(${width}, 1fr)`,
@@ -77,7 +93,6 @@ export function Board({ state, dispatch }: Props) {
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      onPointerLeave={handlePointerUp}
     >
       {cells}
     </div>
