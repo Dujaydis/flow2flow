@@ -1,5 +1,5 @@
 import type { Coord, Level } from './types';
-import { cellKey, coordsEqual, inBounds } from './rules';
+import { cellKey, coordsEqual, levelInBounds, levelNeighbors, levelTotalCells } from './rules';
 
 export type Solution = ReadonlyMap<string, ReadonlyArray<Coord>>;
 
@@ -7,8 +7,6 @@ interface SolveOpts {
   maxSolutions?: number;
   timeoutMs?: number;
 }
-
-const DIRECTIONS: ReadonlyArray<Coord> = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
 export const solve = (level: Level, opts: SolveOpts = {}): Solution[] => {
   const maxSolutions = opts.maxSolutions ?? 2;
@@ -32,7 +30,7 @@ export const solve = (level: Level, opts: SolveOpts = {}): Solution[] => {
     occupied.set(cellKey(pair.b), pair.color);
   }
 
-  const totalCells = level.width * level.height;
+  const totalCells = levelTotalCells(level);
 
   const isFinished = (color: string): boolean => {
     const path = paths.get(color);
@@ -60,9 +58,7 @@ export const solve = (level: Level, opts: SolveOpts = {}): Solution[] => {
     if (!tail) return [];
     const end = endCoords.get(color);
     const moves: Coord[] = [];
-    for (const [dr, dc] of DIRECTIONS) {
-      const next: Coord = [tail[0] + dr, tail[1] + dc];
-      if (!inBounds(next, level.width, level.height)) continue;
+    for (const next of levelNeighbors(level, tail)) {
       const occ = occupied.get(cellKey(next));
       if (occ === undefined) {
         moves.push(next);
@@ -93,20 +89,17 @@ export const solve = (level: Level, opts: SolveOpts = {}): Solution[] => {
         if (!cur) break;
         const curKey = cellKey(cur);
         if (curKey === endKey) foundEnd = true;
-        for (const [dr, dc] of DIRECTIONS) {
-          const nr = cur[0] + dr;
-          const nc = cur[1] + dc;
-          if (!inBounds([nr, nc], level.width, level.height)) continue;
-          const nKey = `${nr},${nc}`;
+        for (const nb of levelNeighbors(level, cur)) {
+          const nKey = cellKey(nb);
           if (visited.has(nKey)) continue;
           const occ = occupied.get(nKey);
           if (occ === undefined) {
             visited.add(nKey);
             reachableEmpty.add(nKey);
-            queue.push([nr, nc]);
+            queue.push(nb);
           } else if (occ === color && nKey === endKey) {
             visited.add(nKey);
-            queue.push([nr, nc]);
+            queue.push(nb);
           }
         }
       }
@@ -114,7 +107,9 @@ export const solve = (level: Level, opts: SolveOpts = {}): Solution[] => {
     }
     for (let r = 0; r < level.height; r++) {
       for (let c = 0; c < level.width; c++) {
-        const key = `${r},${c}`;
+        const cell: Coord = [r, c];
+        if (!levelInBounds(level, cell)) continue;
+        const key = cellKey(cell);
         if (occupied.has(key)) continue;
         if (!reachableEmpty.has(key)) return false;
       }

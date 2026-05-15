@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import type { Dispatch, PointerEvent as ReactPointerEvent } from 'react';
 import type { Action, Coord, GameState } from '../game/types';
 import { computeCellViews } from '../game/views';
+import { levelInBounds } from '../game/rules';
 import { Cell } from './Cell';
 
 interface Props {
@@ -67,9 +68,16 @@ export function Board({ state, dispatch }: Props) {
     [state.active, dispatch]
   );
 
+  const isCube = state.level.topology?.kind === 'cube';
+  const faceSize = state.level.topology?.kind === 'cube' ? state.level.topology.faceSize : 0;
+
   const cells = [];
   for (let r = 0; r < height; r++) {
     for (let c = 0; c < width; c++) {
+      if (!levelInBounds(state.level, [r, c])) {
+        cells.push(<div key={`v${r},${c}`} className="cell void" aria-hidden />);
+        continue;
+      }
       cells.push(
         <Cell
           key={`${r},${c}`}
@@ -85,11 +93,12 @@ export function Board({ state, dispatch }: Props) {
   return (
     <div
       ref={boardRef}
-      className="board"
+      className={`board${isCube ? ' cube' : ''}`}
       style={{
         gridTemplateColumns: `repeat(${width}, 1fr)`,
         gridTemplateRows: `repeat(${height}, 1fr)`,
-      }}
+        ...(isCube ? { ['--face-size' as string]: String(faceSize) } : {}),
+      } as React.CSSProperties}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}

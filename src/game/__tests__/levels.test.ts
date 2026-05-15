@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LEVELS, PACKS } from '../levels';
 import { solve } from '../solver';
 import { validateLevel } from '../levels.validate';
+import { levelTotalCells } from '../rules';
 
 describe('levels', () => {
   it('every starter level passes structural validation', () => {
@@ -18,7 +19,7 @@ describe('levels', () => {
       if (!sol) continue;
       const covered = new Set<string>();
       for (const path of sol.values()) for (const c of path) covered.add(`${c[0]},${c[1]}`);
-      expect(covered.size, `${lvl.id} solution must cover all cells`).toBe(lvl.width * lvl.height);
+      expect(covered.size, `${lvl.id} solution must cover all cells`).toBe(levelTotalCells(lvl));
     }
   });
 

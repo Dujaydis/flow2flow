@@ -3,8 +3,8 @@ import {
   coordsEqual,
   endpointColorAt,
   findInPaths,
-  inBounds,
-  isAdjacent,
+  levelInBounds,
+  levelAreAdjacent,
   pairFor,
 } from './rules';
 
@@ -81,7 +81,7 @@ export function reducer(state: GameState, action: Action): GameState {
 
     case 'START_DRAG': {
       const { cell } = action;
-      if (!inBounds(cell, state.level.width, state.level.height)) return state;
+      if (!levelInBounds(state.level, cell)) return state;
       const endpointColor = endpointColorAt(state.level, cell);
       if (endpointColor !== null) {
         const newPaths = new Map(state.paths);
@@ -115,7 +115,7 @@ export function reducer(state: GameState, action: Action): GameState {
       if (!state.active) return state;
       const { color, path } = state.active;
       if (path.length === 0) return state;
-      if (!inBounds(cell, state.level.width, state.level.height)) return state;
+      if (!levelInBounds(state.level, cell)) return state;
 
       const tail = path[path.length - 1];
       if (!tail) return state;
@@ -127,7 +127,7 @@ export function reducer(state: GameState, action: Action): GameState {
         return { ...state, active: { color, path: truncated } };
       }
 
-      if (!isAdjacent(tail, cell)) return state;
+      if (!levelAreAdjacent(state.level, tail, cell)) return state;
 
       const cellEndpointColor = endpointColorAt(state.level, cell);
       if (cellEndpointColor !== null && cellEndpointColor !== color) {

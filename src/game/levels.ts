@@ -17,6 +17,23 @@ const lvl = (
   pairs,
 });
 
+const lvlCube = (
+  pack: string,
+  numberInPack: number,
+  id: string,
+  faceSize: number,
+  pairs: Level['pairs'],
+): Level => ({
+  id,
+  pack,
+  numberInPack,
+  displayName: `${pack} · ${numberInPack}`,
+  width: 2 * faceSize,
+  height: 2 * faceSize,
+  pairs,
+  topology: { kind: 'cube', faceSize },
+});
+
 const bridges: ReadonlyArray<Level> = [
   lvl('Bridges', 1, 'br-1', 5, 5, [
     { color: 'red', a: [0, 0], b: [4, 4] },
@@ -133,11 +150,35 @@ const mainframe: ReadonlyArray<Level> = [
   ]),
 ];
 
+const cube: ReadonlyArray<Level> = [
+  lvlCube('Cube', 1, 'cu-1', 3, [
+    { color: 'red',    a: [5, 2], b: [4, 2] },
+    { color: 'orange', a: [4, 1], b: [2, 2] },
+  ]),
+  lvlCube('Cube', 2, 'cu-2', 3, [
+    { color: 'red',    a: [3, 4], b: [2, 0] },
+    { color: 'orange', a: [3, 0], b: [4, 0] },
+    { color: 'yellow', a: [5, 0], b: [4, 4] },
+  ]),
+  lvlCube('Cube', 3, 'cu-3', 4, [
+    { color: 'red',    a: [4, 1], b: [4, 6] },
+    { color: 'orange', a: [1, 3], b: [2, 3] },
+    { color: 'yellow', a: [2, 2], b: [2, 1] },
+  ]),
+  lvlCube('Cube', 4, 'cu-4', 4, [
+    { color: 'red',    a: [5, 4], b: [5, 5] },
+    { color: 'orange', a: [4, 5], b: [3, 2] },
+    { color: 'yellow', a: [3, 1], b: [6, 3] },
+    { color: 'green',  a: [6, 4], b: [6, 7] },
+  ]),
+];
+
 export const PACKS: ReadonlyArray<LevelPack> = [
   { id: 'bridges',   name: 'Bridges 5×5',    levels: bridges   },
   { id: 'pipeline',  name: 'Pipeline 6×6',   levels: pipeline  },
   { id: 'network',   name: 'Network 7×7',    levels: network   },
   { id: 'mainframe', name: 'Mainframe 8×8',  levels: mainframe },
+  { id: 'cube',      name: 'Cube — 3 faces', levels: cube      },
 ];
 
 export const LEVELS: ReadonlyArray<Level> = PACKS.flatMap(p => p.levels);

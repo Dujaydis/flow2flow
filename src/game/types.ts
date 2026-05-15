@@ -6,6 +6,10 @@ export interface Pair {
   readonly b: Coord;
 }
 
+export type LevelTopology =
+  | { readonly kind: 'flat' }
+  | { readonly kind: 'cube'; readonly faceSize: number };
+
 export interface Level {
   readonly id: string;
   readonly displayName: string;
@@ -14,6 +18,7 @@ export interface Level {
   readonly width: number;
   readonly height: number;
   readonly pairs: ReadonlyArray<Pair>;
+  readonly topology?: LevelTopology;
 }
 
 export interface LevelPack {

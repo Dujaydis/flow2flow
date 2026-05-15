@@ -1,9 +1,12 @@
-import type { Coord, GameState, Level, Pair } from './types';
+import type { Coord, GameState, Level, LevelTopology, Pair } from './types';
 
 export const cellKey = (c: Coord): string => `${c[0]},${c[1]}`;
 
 export const coordsEqual = (a: Coord, b: Coord): boolean =>
   a[0] === b[0] && a[1] === b[1];
+
+const topologyOf = (level: Pick<Level, 'topology'>): LevelTopology =>
+  level.topology ?? { kind: 'flat' };
 
 export const isAdjacent = (a: Coord, b: Coord): boolean => {
   const dr = Math.abs(a[0] - b[0]);
@@ -13,6 +16,68 @@ export const isAdjacent = (a: Coord, b: Coord): boolean => {
 
 export const inBounds = (cell: Coord, width: number, height: number): boolean =>
   cell[0] >= 0 && cell[0] < height && cell[1] >= 0 && cell[1] < width;
+
+export const levelInBounds = (level: Level, cell: Coord): boolean => {
+  if (!inBounds(cell, level.width, level.height)) return false;
+  const t = topologyOf(level);
+  if (t.kind === 'cube') {
+    if (cell[0] < t.faceSize && cell[1] >= t.faceSize) return false;
+  }
+  return true;
+};
+
+export const levelTotalCells = (level: Level): number => {
+  const t = topologyOf(level);
+  if (t.kind === 'cube') return 3 * t.faceSize * t.faceSize;
+  return level.width * level.height;
+};
+
+export const cubeSeamPartner = (faceSize: number, cell: Coord): Coord | null => {
+  const N = faceSize;
+  if (cell[0] >= 0 && cell[0] < N && cell[1] === N - 1) {
+    return [N, 2 * N - 1 - cell[0]];
+  }
+  if (cell[0] === N && cell[1] >= N && cell[1] <= 2 * N - 1) {
+    return [2 * N - 1 - cell[1], N - 1];
+  }
+  return null;
+};
+
+export const levelNeighbors = (level: Level, cell: Coord): Coord[] => {
+  const result: Coord[] = [];
+  const dirs: ReadonlyArray<Coord> = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  for (const [dr, dc] of dirs) {
+    const next: Coord = [cell[0] + dr, cell[1] + dc];
+    if (levelInBounds(level, next)) result.push(next);
+  }
+  const t = topologyOf(level);
+  if (t.kind === 'cube') {
+    const partner = cubeSeamPartner(t.faceSize, cell);
+    if (partner) result.push(partner);
+  }
+  return result;
+};
+
+export const levelAreAdjacent = (level: Level, a: Coord, b: Coord): boolean => {
+  if (isAdjacent(a, b)) return true;
+  const t = topologyOf(level);
+  if (t.kind === 'cube') {
+    const partner = cubeSeamPartner(t.faceSize, a);
+    if (partner && coordsEqual(partner, b)) return true;
+  }
+  return false;
+};
+
+export const levelAllCells = (level: Level): Coord[] => {
+  const out: Coord[] = [];
+  for (let r = 0; r < level.height; r++) {
+    for (let c = 0; c < level.width; c++) {
+      const cell: Coord = [r, c];
+      if (levelInBounds(level, cell)) out.push(cell);
+    }
+  }
+  return out;
+};
 
 export interface OccupantInfo {
   readonly color: string;
@@ -87,12 +152,12 @@ export const isSolved = (state: GameState): boolean => {
     for (let i = 1; i < path.length; i++) {
       const prev = path[i - 1];
       const cur = path[i];
-      if (!prev || !cur || !isAdjacent(prev, cur)) return false;
+      if (!prev || !cur || !levelAreAdjacent(level, prev, cur)) return false;
     }
   }
   const covered = new Set<string>();
   for (const path of paths.values()) for (const c of path) covered.add(cellKey(c));
-  return covered.size === level.width * level.height;
+  return covered.size === levelTotalCells(level);
 };
 
 export const pathProgress = (state: GameState): { connected: number; total: number; coverage: number; totalCells: number } => {
@@ -115,6 +180,6 @@ export const pathProgress = (state: GameState): { connected: number; total: numb
     connected,
     total,
     coverage: covered.size,
-    totalCells: state.level.width * state.level.height,
+    totalCells: levelTotalCells(state.level),
   };
 };
